@@ -1,0 +1,53 @@
+{
+  "name": "glpi-mcp",
+  "version": "1.2.3",
+  "description": "MCP Server for GLPI REST API — with session token auto-refresh fix",
+  "bin": {
+    "glpi-mcp": "bin/cli.js"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node bin/cli.js",
+    "watch": "tsc --watch",
+    "setup-oauth": "node dist/setup-oauth.js"
+  },
+  "keywords": [
+    "mcp",
+    "glpi",
+    "server"
+  ],
+  "files": [
+    "dist",
+    "bin",
+    "package.json",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maimik/glpi-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/maimik/glpi-mcp/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "kent0919 <kent900919@gmail.com>",
+  "contributors": [
+    "Andy Maimus <maimik> — session token 401 auto-recovery fix"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.1",
+    "axios": "^1.13.2",
+    "dotenv": "^16.4.5",
+    "ts-node": "^10.9.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.25",
+    "typescript": "^5.9.3"
+  }
+}
