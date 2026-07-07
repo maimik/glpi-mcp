@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const server = new McpServer({
   name: 'glpi-mcp-server',
-  version: '1.2.3',
+  version: '1.2.4',
 });
 
 const GLPI_API_URL = process.env.GLPI_API_URL;
@@ -212,22 +212,53 @@ const searchSchema = {
 
 server.tool('glpi_search', searchSchema, async ({ itemType, query, rawParams }) => {
   try {
-    let params: Record<string, unknown> = {};
+    let criteria: Array<{ link?: string; field: string; searchtype: string; value: string }> = [];
     if (rawParams) {
       try {
-        params = JSON.parse(rawParams);
+        const parsed = JSON.parse(rawParams);
+        criteria = parsed.criteria || [];
       } catch {
         return {
           content: [{ type: 'text', text: 'Error: Invalid JSON input for rawParams' }],
           isError: true,
         };
       }
-    } else if (query) {
-      // Query mapping complexity omitted for v1
     }
-    const result = await glpi.search(itemType, params);
+
+    // GLPI search endpoint has broken criteria filtering.
+    // Workaround: fetch ALL items via listItems, then filter client-side.
+    const allItems = await glpi.listItems(itemType, { range: '0-500' });
+    const items = Array.isArray(allItems) ? allItems : [];
+
+    // Apply criteria filters
+    let filtered = items;
+    for (const c of criteria) {
+      const field = c.field;
+      const st = c.searchtype;
+      const val = c.value;
+
+      filtered = filtered.filter((item: any) => {
+        const itemVal = String(item[field] ?? '');
+        switch (st) {
+          case 'equals': return itemVal === val;
+          case 'contains': return itemVal.includes(val);
+          case 'lessthan': return Number(itemVal) < Number(val);
+          case 'morethan': return Number(itemVal) > Number(val);
+          case 'notequals': return itemVal !== val;
+          default: return true;
+        }
+      });
+    }
+
     return {
-      content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          totalcount: filtered.length,
+          count: filtered.length,
+          data: filtered,
+        }, null, 2),
+      }],
     };
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);

@@ -1,6 +1,6 @@
 {
   "name": "glpi-mcp",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "MCP Server for GLPI REST API — with session token auto-refresh fix",
   "bin": {
     "glpi-mcp": "bin/cli.js"
