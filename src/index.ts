@@ -11,7 +11,7 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const server = new McpServer({
   name: 'glpi-mcp-server',
-  version: '1.2.4',
+  version: '1.2.5',
 });
 
 const GLPI_API_URL = process.env.GLPI_API_URL;
@@ -231,6 +231,20 @@ server.tool('glpi_search', searchSchema, async ({ itemType, query, rawParams }) 
     const items = Array.isArray(allItems) ? allItems : [];
 
     // Apply criteria filters
+    // Map GLPI numeric field IDs to property names (listItems returns named fields)
+    const FIELD_MAP: Record<string, string> = {
+      '1': 'name', '2': 'id', '12': 'status', '15': 'date', '16': 'closedate',
+      '4': 'date_mod', '5': 'date_creation', '7': 'type', '8': 'itilcategories_id',
+      '10': 'users_id_recipient', '13': 'urgency', '14': 'impact', '21': 'content',
+    };
+    function resolveField(item: any, field: string): string {
+      // Try direct property first
+      if (item && item[field] !== undefined) return String(item[field]);
+      // Try mapped name
+      const mapped = FIELD_MAP[field];
+      if (mapped && item && item[mapped] !== undefined) return String(item[mapped]);
+      return '';
+    }
     let filtered = items;
     for (const c of criteria) {
       const field = c.field;
@@ -238,7 +252,7 @@ server.tool('glpi_search', searchSchema, async ({ itemType, query, rawParams }) 
       const val = c.value;
 
       filtered = filtered.filter((item: any) => {
-        const itemVal = String(item[field] ?? '');
+        const itemVal = resolveField(item, field);
         switch (st) {
           case 'equals': return itemVal === val;
           case 'contains': return itemVal.includes(val);
